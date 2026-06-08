@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ProofHub Quick Task</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- 1. SETUP VIEW -->
+    <div id="setup-view" class="view active">
+      <div class="header">
+        <div class="logo-area">
+          <svg class="logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+          <h1>ProofHub Setup</h1>
+        </div>
+        <p class="subtitle">Connect your account details below</p>
+      </div>
+
+      <div class="form-group">
+        <label for="domain-input">ProofHub URL / Domain</label>
+        <input type="text" id="domain-input" value="teknopoint.proofhub.com" placeholder="domain.proofhub.com" required autocomplete="off">
+        <span class="help-text">Enter your subdomain or full company URL.</span>
+      </div>
+
+      <div class="form-group">
+        <div class="label-row">
+          <label for="api-key-input">API Key</label>
+          <a href="https://help.proofhub.com/swift/others/how-to-access-your-api-key" target="_blank" id="help-link" class="help-link">How to get API key?</a>
+        </div>
+        <div class="input-wrapper">
+          <input type="password" id="api-key-input" placeholder="Enter your API Key" required autocomplete="off">
+          <button type="button" id="toggle-api-key" class="icon-button" title="Toggle visibility">
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <button id="save-btn" class="btn primary-btn">
+        <span>Connect Account</span>
+        <span class="spinner hidden" id="save-spinner"></span>
+      </button>
+    </div>
+
+    <!-- 2. PROJECT SELECTION VIEW -->
+    <div id="project-view" class="view">
+      <div class="task-header">
+        <div class="title-section">
+          <h2>Select Project</h2>
+          <span class="account-label" id="account-label-project"></span>
+        </div>
+        <button id="disconnect-project-btn" class="disconnect-btn" title="Disconnect Account">
+          <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
+            <line x1="12" y1="2" x2="12" y2="12"></line>
+          </svg>
+          <span>Disconnect</span>
+        </button>
+      </div>
+
+      <div class="search-box">
+        <div class="input-wrapper">
+          <input type="text" id="project-search" placeholder="Filter projects..." autocomplete="off">
+          <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </div>
+      </div>
+
+      <div class="project-list-wrapper">
+        <div id="project-list" class="project-list">
+          <!-- Dynamically populated project rows -->
+        </div>
+        <div id="projects-loading-state" class="loading-state hidden">
+          <span class="spinner select-spinner"></span>
+          <p>Loading projects...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. TASK CREATION VIEW -->
+    <div id="task-view" class="view">
+      <div class="task-header">
+        <div class="back-section">
+          <button id="back-to-projects-btn" class="back-btn" title="Back to project search">
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+          </button>
+          <div class="title-section">
+            <h2 id="active-project-name">Create Task</h2>
+            <span class="badge" id="email-badge" title="Auto-filled from active email page">Email Connected</span>
+          </div>
+        </div>
+        <button id="disconnect-task-btn" class="disconnect-btn" title="Disconnect Account">
+          <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
+            <line x1="12" y1="2" x2="12" y2="12"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="task-form">
+        <!-- Task List Dropdown & Open PH Button Row -->
+        <div class="form-group">
+          <label for="todolist-select">Task List</label>
+          <div class="action-select-row">
+            <div class="select-wrapper flex-grow">
+              <select id="todolist-select" required>
+                <option value="" disabled selected>Select a task list</option>
+              </select>
+              <span class="spinner select-spinner hidden" id="todolists-loading"></span>
+            </div>
+            <button id="open-ph-btn" class="sec-btn" title="Open active list in ProofHub" type="button" disabled>
+              <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+              </svg>
+              <span>Open PH</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Task Assignment -->
+        <div class="form-group">
+          <label for="assignee-select">Assignment</label>
+          <div class="select-wrapper">
+            <select id="assignee-select">
+              <option value="" selected>Unassigned</option>
+            </select>
+            <span class="spinner select-spinner hidden" id="people-loading"></span>
+          </div>
+        </div>
+
+        <!-- Task Status (Ch status) -->
+        <div class="form-group">
+          <label for="status-select">Status (Ch status)</label>
+          <select id="status-select">
+            <option value="To Do" selected>To Do</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Done">Done</option>
+          </select>
+        </div>
+
+        <!-- Task Labels (Add Label) -->
+        <div class="form-group">
+          <label for="label-select">Add Label</label>
+          <div class="select-wrapper">
+            <select id="label-select">
+              <option value="" selected>No Label</option>
+            </select>
+            <span class="spinner select-spinner hidden" id="labels-loading"></span>
+          </div>
+        </div>
+
+        <!-- Task Title -->
+        <div class="form-group">
+          <label for="task-title">Task Title</label>
+          <input type="text" id="task-title" placeholder="What needs to be done?" required autocomplete="off">
+        </div>
+
+        <!-- Task Description -->
+        <div class="form-group">
+          <label for="task-desc">Description</label>
+          <textarea id="task-desc" rows="3" placeholder="Add details or notes..."></textarea>
+        </div>
+
+        <!-- Submit Button -->
+        <button id="create-task-btn" class="btn primary-btn" disabled>
+          <span>Add Task</span>
+          <span class="spinner hidden" id="create-task-spinner"></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Alert Banner -->
+    <div id="alert-banner" class="alert-banner hidden">
+      <span class="alert-message"></span>
+      <button id="close-alert" class="close-alert">&times;</button>
+    </div>
+    
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
