@@ -59,12 +59,11 @@
           <h2>Select Project</h2>
           <span class="account-label" id="account-label-project"></span>
         </div>
-        <button id="disconnect-project-btn" class="disconnect-btn" title="Disconnect Account">
-          <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
-            <line x1="12" y1="2" x2="12" y2="12"></line>
+        <button id="profile-project-btn" class="icon-header-btn" title="View Profile">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
           </svg>
-          <span>Disconnect</span>
         </button>
       </div>
 
@@ -104,10 +103,10 @@
             <span class="badge" id="email-badge" title="Auto-filled from active email page">Email Connected</span>
           </div>
         </div>
-        <button id="disconnect-task-btn" class="disconnect-btn" title="Disconnect Account">
-          <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
-            <line x1="12" y1="2" x2="12" y2="12"></line>
+        <button id="profile-task-btn" class="icon-header-btn" title="View Profile">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
           </svg>
         </button>
       </div>
@@ -185,6 +184,65 @@
         </button>
       </div>
     </div>
+
+    <!-- 4. PROFILE VIEW -->
+    <div id="profile-view" class="view">
+      <div class="task-header">
+        <div class="back-section">
+          <button id="back-from-profile-btn" class="back-btn" title="Back">
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+          </button>
+          <div class="title-section">
+            <h2>Account Profile</h2>
+            <span class="account-label">Change your credentials here</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-form">
+        <div class="form-group">
+          <label for="profile-domain-input">ProofHub URL / Domain</label>
+          <input type="text" id="profile-domain-input" placeholder="domain.proofhub.com" required autocomplete="off">
+        </div>
+
+        <div class="form-group">
+          <label for="profile-api-key-input">API Key</label>
+          <div class="input-wrapper">
+            <input type="password" id="profile-api-key-input" placeholder="API Key" required autocomplete="off">
+            <button type="button" id="toggle-profile-api-key" class="icon-button" title="Toggle visibility">
+              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <button id="save-profile-btn" class="btn primary-btn">
+          <span>Save Changes</span>
+          <span class="spinner hidden" id="save-profile-spinner"></span>
+        </button>
+
+        <div class="divider"></div>
+
+        <div class="danger-zone">
+          <h3 class="danger-title">Danger Zone</h3>
+          <p class="help-text">Logging out will remove all saved settings and preferences.</p>
+          <button id="logout-btn" class="btn danger-btn" type="button">
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            <span>Log Out / Disconnect</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
 
     <!-- Alert Banner -->
     <div id="alert-banner" class="alert-banner hidden">

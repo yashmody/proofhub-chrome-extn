@@ -2,6 +2,7 @@
 const setupView = document.getElementById('setup-view');
 const projectView = document.getElementById('project-view');
 const taskView = document.getElementById('task-view');
+const profileView = document.getElementById('profile-view');
 
 // DOM Elements - Setup View
 const domainInput = document.getElementById('domain-input');
@@ -11,7 +12,7 @@ const saveBtn = document.getElementById('save-btn');
 const saveSpinner = document.getElementById('save-spinner');
 
 // DOM Elements - Project View
-const disconnectProjectBtn = document.getElementById('disconnect-project-btn');
+const profileProjectBtn = document.getElementById('profile-project-btn');
 const accountLabelProject = document.getElementById('account-label-project');
 const projectSearch = document.getElementById('project-search');
 const projectList = document.getElementById('project-list');
@@ -21,7 +22,7 @@ const projectsLoadingState = document.getElementById('projects-loading-state');
 const backToProjectsBtn = document.getElementById('back-to-projects-btn');
 const activeProjectName = document.getElementById('active-project-name');
 const emailBadge = document.getElementById('email-badge');
-const disconnectTaskBtn = document.getElementById('disconnect-task-btn');
+const profileTaskBtn = document.getElementById('profile-task-btn');
 const todolistSelect = document.getElementById('todolist-select');
 const openPhBtn = document.getElementById('open-ph-btn');
 const assigneeSelect = document.getElementById('assignee-select');
@@ -30,6 +31,15 @@ const labelSelect = document.getElementById('label-select');
 const taskTitleInput = document.getElementById('task-title');
 const taskDescTextarea = document.getElementById('task-desc');
 const createTaskBtn = document.getElementById('create-task-btn');
+
+// DOM Elements - Profile View
+const backFromProfileBtn = document.getElementById('back-from-profile-btn');
+const profileDomainInput = document.getElementById('profile-domain-input');
+const profileApiKeyInput = document.getElementById('profile-api-key-input');
+const toggleProfileApiKeyBtn = document.getElementById('toggle-profile-api-key');
+const saveProfileBtn = document.getElementById('save-profile-btn');
+const saveProfileSpinner = document.getElementById('save-profile-spinner');
+const logoutBtn = document.getElementById('logout-btn');
 
 // DOM Elements - Spinners
 const todolistsLoading = document.getElementById('todolists-loading');
@@ -48,6 +58,8 @@ let allProjects = [];
 let pinnedProjectIds = [];
 let selectedProjectId = '';
 let selectedProjectName = '';
+let previousView = 'project';
+
 
 // Helper: Sanitize and clean domain input
 function cleanDomain(input) {
@@ -187,9 +199,34 @@ function setupEventListeners() {
   domainInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleConnectAccount(); });
   apiKeyInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleConnectAccount(); });
 
-  // Disconnect Buttons
-  disconnectProjectBtn.addEventListener('click', handleDisconnect);
-  disconnectTaskBtn.addEventListener('click', handleDisconnect);
+  // Profile Navigation Buttons
+  profileProjectBtn.addEventListener('click', () => openProfileView('project'));
+  profileTaskBtn.addEventListener('click', () => openProfileView('task'));
+  backFromProfileBtn.addEventListener('click', () => showView(previousView));
+
+  // Toggle API Key visibility in Profile View
+  toggleProfileApiKeyBtn.addEventListener('click', () => {
+    const isPassword = profileApiKeyInput.type === 'password';
+    profileApiKeyInput.type = isPassword ? 'text' : 'password';
+    const svg = toggleProfileApiKeyBtn.querySelector('svg');
+    if (isPassword) {
+      svg.innerHTML = `
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+        <circle cx="12" cy="12" r="3"></circle>
+      `;
+    } else {
+      svg.innerHTML = `
+        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+        <line x1="1" y1="1" x2="23" y2="23"></line>
+      `;
+    }
+  });
+
+  // Save changes in Profile
+  saveProfileBtn.addEventListener('click', handleSaveProfileChanges);
+  
+  // Danger Zone - Log Out
+  logoutBtn.addEventListener('click', handleDisconnect);
 
   // Search filter box
   projectSearch.addEventListener('input', () => {
@@ -247,6 +284,7 @@ function showView(viewName) {
   setupView.classList.remove('active');
   projectView.classList.remove('active');
   taskView.classList.remove('active');
+  profileView.classList.remove('active');
 
   if (viewName === 'setup') {
     setupView.classList.add('active');
@@ -254,8 +292,79 @@ function showView(viewName) {
     projectView.classList.add('active');
   } else if (viewName === 'task') {
     taskView.classList.add('active');
+  } else if (viewName === 'profile') {
+    profileView.classList.add('active');
   }
 }
+
+// Open Profile view and cache previous view
+function openProfileView(viewName) {
+  previousView = viewName;
+  profileDomainInput.value = storedDomain;
+  profileApiKeyInput.value = storedApiKey;
+  showView('profile');
+}
+
+// Save updated credentials from Profile View
+async function handleSaveProfileChanges() {
+  const domainRaw = profileDomainInput.value.trim();
+  const apiKey = profileApiKeyInput.value.trim();
+
+  if (!domainRaw) {
+    showAlert('Please enter a ProofHub domain.', 'error');
+    return;
+  }
+  if (!apiKey) {
+    showAlert('Please enter an API Key.', 'error');
+    return;
+  }
+
+  const domain = cleanDomain(domainRaw);
+  setLoadingState(saveProfileBtn, true, 'save-profile-spinner');
+
+  try {
+    const urls = [
+      `https://${domain}`,
+      `https://${domain}/api/v3/projects`,
+      `https://${domain}/api/v3/projects.json`,
+      `https://${domain}/projects.json`
+    ];
+
+    // Validate key by attempting to fetch projects using fallback endpoints
+    await fetchWithFallback(urls, {
+      method: 'GET',
+      headers: getHeaders(apiKey)
+    });
+
+    // Save configurations
+    chrome.storage.local.set({
+      proofhub_api_key: apiKey,
+      proofhub_domain: domain
+    }, async () => {
+      storedApiKey = apiKey;
+      storedDomain = domain;
+      accountLabelProject.textContent = domain;
+      
+      showAlert('Profile updated successfully!', 'success');
+      showView(previousView);
+      
+      // If we went back to project list, reload it
+      if (previousView === 'project') {
+        await fetchAndRenderProjects();
+      } else if (previousView === 'task') {
+        // If we went back to task view, reload the task view resources for the selected project
+        await loadTaskFormState(selectedProjectId);
+      }
+    });
+
+  } catch (err) {
+    console.error('Profile update validation error:', err);
+    showAlert(err.message || 'Failed to update. Verify credentials.', 'error');
+  } finally {
+    setLoadingState(saveProfileBtn, false, 'save-profile-spinner');
+  }
+}
+
 
 // Alert banner display
 function showAlert(message, type = 'success') {
