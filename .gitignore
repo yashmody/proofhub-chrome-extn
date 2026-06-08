@@ -1,0 +1,5 @@
+# Ignore zip builds
+*.zip
+
+# OS files
+.DS_Store
