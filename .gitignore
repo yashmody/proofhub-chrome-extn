@@ -3,3 +3,6 @@
 
 # OS files
 .DS_Store
+
+# Ignore release folder
+release/
