@@ -26,7 +26,7 @@
 
       <div class="form-group">
         <label for="domain-input">ProofHub URL / Domain</label>
-        <input type="text" id="domain-input" placeholder="domain.proofhub.com" required autocomplete="off">
+        <input type="text" id="domain-input" placeholder="teknopoint.proofhub.com" value="teknopoint.proofhub.com" required autocomplete="off">
         <span class="help-text">Enter your subdomain or full company URL.</span>
       </div>
 
@@ -59,12 +59,19 @@
           <h2>Select Project</h2>
           <span class="account-label" id="account-label-project"></span>
         </div>
-        <button id="profile-project-btn" class="icon-header-btn" title="View Profile">
-          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-            <circle cx="12" cy="7" r="4"></circle>
-          </svg>
-        </button>
+        <div class="header-actions">
+          <button id="theme-toggle-project" class="icon-header-btn theme-toggle-btn" title="Toggle Theme" type="button">
+            <svg class="theme-icon-moon" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+          </button>
+          <button id="profile-project-btn" class="icon-header-btn" title="View Profile" type="button">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          </button>
+        </div>
       </div>
 
       <div class="search-box">
@@ -103,12 +110,19 @@
             <span class="badge" id="email-badge" title="Auto-filled from active email page">Email Connected</span>
           </div>
         </div>
-        <button id="profile-task-btn" class="icon-header-btn" title="View Profile">
-          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-            <circle cx="12" cy="7" r="4"></circle>
-          </svg>
-        </button>
+        <div class="header-actions">
+          <button id="theme-toggle-task" class="icon-header-btn theme-toggle-btn" title="Toggle Theme" type="button">
+            <svg class="theme-icon-moon" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+          </button>
+          <button id="profile-task-btn" class="icon-header-btn" title="View Profile" type="button">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          </button>
+        </div>
       </div>
 
       <div class="task-form">
@@ -133,6 +147,18 @@
           </div>
         </div>
 
+        <!-- Task Title -->
+        <div class="form-group">
+          <label for="task-title">Task Title</label>
+          <input type="text" id="task-title" placeholder="What needs to be done?" required autocomplete="off">
+        </div>
+
+        <!-- Task Description -->
+        <div class="form-group">
+          <label for="task-desc">Description</label>
+          <textarea id="task-desc" rows="3" placeholder="Add details or notes..."></textarea>
+        </div>
+
         <!-- Task Assignment -->
         <div class="form-group">
           <label for="assignee-select">Assignment</label>
@@ -144,14 +170,22 @@
           </div>
         </div>
 
-        <!-- Task Status (Ch status) -->
-        <div class="form-group">
-          <label for="status-select">Status (Ch status)</label>
-          <select id="status-select">
-            <option value="To Do" selected>To Do</option>
-            <option value="In Progress">In Progress</option>
-            <option value="Done">Done</option>
-          </select>
+        <!-- Task Start & End Dates -->
+        <div class="date-grid">
+          <div class="form-group">
+            <label for="start-date-input">Start Date</label>
+            <input type="date" id="start-date-input" class="date-input">
+          </div>
+          <div class="form-group">
+            <label for="due-date-input">End Date</label>
+            <input type="date" id="due-date-input" class="date-input">
+          </div>
+        </div>
+        <div class="date-presets">
+          <button type="button" class="preset-btn" id="preset-today">Today</button>
+          <button type="button" class="preset-btn" id="preset-tomorrow">Tom</button>
+          <button type="button" class="preset-btn" id="preset-next-monday">Mon</button>
+          <button type="button" class="preset-btn clear-btn" id="preset-clear" title="Clear Dates">&times; Clear</button>
         </div>
 
         <!-- Task Labels (Add Label) -->
@@ -165,23 +199,22 @@
           </div>
         </div>
 
-        <!-- Task Title -->
-        <div class="form-group">
-          <label for="task-title">Task Title</label>
-          <input type="text" id="task-title" placeholder="What needs to be done?" required autocomplete="off">
-        </div>
-
-        <!-- Task Description -->
-        <div class="form-group">
-          <label for="task-desc">Description</label>
-          <textarea id="task-desc" rows="3" placeholder="Add details or notes..."></textarea>
-        </div>
-
         <!-- Submit Button -->
         <button id="create-task-btn" class="btn primary-btn" disabled>
           <span>Add Task</span>
           <span class="spinner hidden" id="create-task-spinner"></span>
         </button>
+
+        <!-- Recent Tasks Panel -->
+        <div class="recent-tasks-panel hidden" id="recent-tasks-panel">
+          <div class="recent-tasks-header">
+            <h3>Recent Tasks</h3>
+            <button type="button" id="clear-recent-btn" class="clear-recent-btn" title="Clear history">Clear</button>
+          </div>
+          <div id="recent-tasks-list" class="recent-tasks-list">
+            <!-- Dynamically populated recent tasks -->
+          </div>
+        </div>
       </div>
     </div>
 
@@ -189,7 +222,7 @@
     <div id="profile-view" class="view">
       <div class="task-header">
         <div class="back-section">
-          <button id="back-from-profile-btn" class="back-btn" title="Back">
+          <button id="back-from-profile-btn" class="back-btn" title="Back" type="button">
             <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
               <line x1="19" y1="12" x2="5" y2="12"></line>
               <polyline points="12 19 5 12 12 5"></polyline>
@@ -200,12 +233,17 @@
             <span class="account-label">Change your credentials here</span>
           </div>
         </div>
+        <button id="theme-toggle-profile" class="icon-header-btn theme-toggle-btn" title="Toggle Theme" type="button">
+          <svg class="theme-icon-moon" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
       </div>
 
       <div class="task-form">
         <div class="form-group">
           <label for="profile-domain-input">ProofHub URL / Domain</label>
-          <input type="text" id="profile-domain-input" placeholder="domain.proofhub.com" required autocomplete="off">
+          <input type="text" id="profile-domain-input" placeholder="teknopoint.proofhub.com" required autocomplete="off">
         </div>
 
         <div class="form-group">

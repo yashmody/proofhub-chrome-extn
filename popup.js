@@ -17,6 +17,7 @@ const accountLabelProject = document.getElementById('account-label-project');
 const projectSearch = document.getElementById('project-search');
 const projectList = document.getElementById('project-list');
 const projectsLoadingState = document.getElementById('projects-loading-state');
+const themeToggleProject = document.getElementById('theme-toggle-project');
 
 // DOM Elements - Task View
 const backToProjectsBtn = document.getElementById('back-to-projects-btn');
@@ -26,11 +27,24 @@ const profileTaskBtn = document.getElementById('profile-task-btn');
 const todolistSelect = document.getElementById('todolist-select');
 const openPhBtn = document.getElementById('open-ph-btn');
 const assigneeSelect = document.getElementById('assignee-select');
-const statusSelect = document.getElementById('status-select');
 const labelSelect = document.getElementById('label-select');
 const taskTitleInput = document.getElementById('task-title');
 const taskDescTextarea = document.getElementById('task-desc');
 const createTaskBtn = document.getElementById('create-task-btn');
+const themeToggleTask = document.getElementById('theme-toggle-task');
+
+// DOM Elements - Due Date section
+const startDateInput = document.getElementById('start-date-input');
+const dueDateInput = document.getElementById('due-date-input');
+const presetToday = document.getElementById('preset-today');
+const presetTomorrow = document.getElementById('preset-tomorrow');
+const presetNextMonday = document.getElementById('preset-next-monday');
+const presetClear = document.getElementById('preset-clear');
+
+// DOM Elements - Recent Tasks panel
+const recentTasksPanel = document.getElementById('recent-tasks-panel');
+const clearRecentBtn = document.getElementById('clear-recent-btn');
+const recentTasksList = document.getElementById('recent-tasks-list');
 
 // DOM Elements - Profile View
 const backFromProfileBtn = document.getElementById('back-from-profile-btn');
@@ -40,6 +54,7 @@ const toggleProfileApiKeyBtn = document.getElementById('toggle-profile-api-key')
 const saveProfileBtn = document.getElementById('save-profile-btn');
 const saveProfileSpinner = document.getElementById('save-profile-spinner');
 const logoutBtn = document.getElementById('logout-btn');
+const themeToggleProfile = document.getElementById('theme-toggle-profile');
 
 // DOM Elements - Spinners
 const todolistsLoading = document.getElementById('todolists-loading');
@@ -59,6 +74,8 @@ let pinnedProjectIds = [];
 let selectedProjectId = '';
 let selectedProjectName = '';
 let previousView = 'project';
+let recentTasks = [];
+let isDarkMode = false;
 
 
 // Helper: Sanitize and clean domain input
@@ -141,11 +158,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     'proofhub_pinned_projects',
     'proofhub_last_project_id',
     'proofhub_last_project_name',
-    'proofhub_last_todolist_id'
+    'proofhub_last_todolist_id',
+    'proofhub_theme',
+    'proofhub_recent_tasks'
   ], async (result) => {
     storedApiKey = result.proofhub_api_key || '';
     storedDomain = result.proofhub_domain || '';
     pinnedProjectIds = result.proofhub_pinned_projects || [];
+    
+    // Theme initialization
+    const savedTheme = result.proofhub_theme;
+    if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      isDarkMode = true;
+      document.body.classList.add('dark-theme');
+    } else {
+      isDarkMode = false;
+      document.body.classList.remove('dark-theme');
+    }
+    updateThemeUI();
+
+    // Recent tasks initialization
+    recentTasks = result.proofhub_recent_tasks || [];
+    renderRecentTasks();
     
     if (storedApiKey && storedDomain) {
       accountLabelProject.textContent = storedDomain;
@@ -277,6 +311,70 @@ function setupEventListeners() {
   });
 
   closeAlertBtn.addEventListener('click', hideAlert);
+
+  // Theme Toggle Actions
+  const handleThemeToggle = () => {
+    isDarkMode = !isDarkMode;
+    document.body.classList.toggle('dark-theme', isDarkMode);
+    chrome.storage.local.set({ proofhub_theme: isDarkMode ? 'dark' : 'light' });
+    updateThemeUI();
+  };
+  themeToggleProject.addEventListener('click', handleThemeToggle);
+  themeToggleTask.addEventListener('click', handleThemeToggle);
+  themeToggleProfile.addEventListener('click', handleThemeToggle);
+
+  // Due Date presets listeners
+  presetToday.addEventListener('click', () => {
+    const todayStr = getFormattedDate(0);
+    dueDateInput.value = todayStr;
+    updatePresetActiveState(presetToday);
+  });
+  presetTomorrow.addEventListener('click', () => {
+    const tomorrowStr = getFormattedDate(1);
+    dueDateInput.value = tomorrowStr;
+    updatePresetActiveState(presetTomorrow);
+  });
+  presetNextMonday.addEventListener('click', () => {
+    const nextMondayStr = getFormattedDate(getDaysToNextMonday());
+    dueDateInput.value = nextMondayStr;
+    updatePresetActiveState(presetNextMonday);
+  });
+  presetClear.addEventListener('click', () => {
+    startDateInput.value = '';
+    dueDateInput.value = '';
+    updatePresetActiveState(null);
+  });
+  dueDateInput.addEventListener('change', () => {
+    updatePresetActiveState(null); // Clear preset active visual indicators if manually changed
+  });
+  startDateInput.addEventListener('change', () => {
+    updatePresetActiveState(null);
+  });
+
+  // Recent Tasks clear action
+  clearRecentBtn.addEventListener('click', () => {
+    recentTasks = [];
+    chrome.storage.local.set({ proofhub_recent_tasks: [] }, () => {
+      renderRecentTasks();
+      showAlert('History cleared.', 'success');
+    });
+  });
+
+  // Keyboard Shortcuts: Ctrl/Cmd + Enter to submit; Escape to go back
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      if (!createTaskBtn.disabled && taskView.classList.contains('active')) {
+        handleCreateTask();
+      }
+    }
+    if (e.key === 'Escape') {
+      if (profileView.classList.contains('active')) {
+        backFromProfileBtn.click();
+      } else if (taskView.classList.contains('active')) {
+        backToProjectsBtn.click();
+      }
+    }
+  });
 }
 
 // Router between views
@@ -469,6 +567,9 @@ function projectSelectReset() {
   openPhBtn.disabled = true;
   taskTitleInput.value = '';
   taskDescTextarea.value = '';
+  startDateInput.value = '';
+  dueDateInput.value = '';
+  updatePresetActiveState(null);
   emailBadge.classList.remove('visible');
 }
 
@@ -682,7 +783,7 @@ async function fetchPeople(projectId) {
   peopleLoading.classList.remove('hidden');
   try {
     const urls = [
-      resolveUrl(`https://${storedDomain}{project_id}/people.json`, 'project_id', projectId),
+      resolveUrl(`https://${storedDomain}/projects/{project_id}/people.json`, 'project_id', projectId),
       `https://${storedDomain}/api/v3/projects/${cleanId(projectId)}/people`,
       `https://${storedDomain}/api/v3/people`,
       `https://${storedDomain}/api/v3/people.json`
@@ -699,7 +800,22 @@ async function fetchPeople(projectId) {
       people.forEach(person => {
         const option = document.createElement('option');
         option.value = person.id;
-        option.textContent = person.name || person.email || `Member #${person.id}`;
+        
+        let displayName = '';
+        if (person.first_name) {
+          displayName = person.first_name;
+          if (person.last_name) {
+            displayName += ' ' + person.last_name;
+          }
+        } else if (person.name) {
+          displayName = person.name;
+        } else if (person.email) {
+          displayName = person.email;
+        } else {
+          displayName = `Member #${person.id}`;
+        }
+        
+        option.textContent = displayName;
         assigneeSelect.appendChild(option);
       });
       assigneeSelect.disabled = false;
@@ -761,92 +877,114 @@ function populateLabelsDropdown(labels) {
   }
 }
 
-// Active Tab email context grabber
+// Active Tab context grabber (Email & General Webpage)
 async function detectAndInjectEmailContext() {
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab || !tab.url) return;
 
     const url = tab.url;
+    // Don't grab internal chrome/edge pages
+    if (url.startsWith('chrome://') || url.startsWith('edge://') || url.startsWith('about:')) return;
+
     const isEmail = url.includes('mail.google.com') ||
                     url.includes('outlook.live.com') ||
                     url.includes('outlook.office.com') ||
                     url.includes('outlook.office365.com');
 
+    emailBadge.classList.add('visible');
     if (isEmail) {
-      emailBadge.classList.add('visible');
+      emailBadge.textContent = 'Email Connected';
+      emailBadge.style.backgroundColor = 'var(--success-bg)';
+      emailBadge.style.color = 'var(--success-color)';
+    } else {
+      emailBadge.textContent = 'Link Connected';
+      emailBadge.style.backgroundColor = 'var(--primary-light)';
+      emailBadge.style.color = 'var(--primary-color)';
+    }
 
-      // Execute script in the active tab context to extract DOM elements
-      chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        func: () => {
-          let subject = '';
-          // 1. Try to fetch subject via Gmail / Outlook DOM selectors
-          if (window.location.host.includes('mail.google.com')) {
-            const gmailSubjectEl = document.querySelector('h2.hP');
-            if (gmailSubjectEl) {
-              subject = gmailSubjectEl.textContent.trim();
-            }
-          } else if (window.location.host.includes('outlook')) {
-            const outlookSubjectEl = document.querySelector('[role="main"] h1') || 
-                                     document.querySelector('.F_66n') || 
-                                     document.querySelector('[role="heading"][aria-level="1"]');
-            if (outlookSubjectEl) {
-              subject = outlookSubjectEl.textContent.trim();
-            }
+    // Execute script in the active tab context to extract DOM elements
+    chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: () => {
+        let subject = '';
+        // 1. Try to fetch subject via Gmail / Outlook DOM selectors
+        if (window.location.host.includes('mail.google.com')) {
+          const gmailSubjectEl = document.querySelector('h2.hP');
+          if (gmailSubjectEl) {
+            subject = gmailSubjectEl.textContent.trim();
           }
-
-          // 2. Fallback: Parse and clean document title
-          if (!subject) {
-            let title = document.title || '';
-            // Remove Inbox count e.g., "Inbox (5) - " or "Inbox (12) -"
-            title = title.replace(/^\([0-9]+\)\s*/, '');
-            title = title.replace(/^Inbox\s+\([0-9]+\)\s*-\s*/i, '');
-            
-            // Remove email addresses and everything after them
-            title = title.replace(/\s+-\s+[^@\s]+@[^@\s]+\.[^@\s]+.*/, '');
-            // Remove browser/client suffixes
-            title = title.replace(/\s+-\s+Gmail$/i, '');
-            title = title.replace(/\s+-\s+.*Outlook$/i, '');
-            subject = title.trim();
+        } else if (window.location.host.includes('outlook')) {
+          const outlookSubjectEl = document.querySelector('[role="main"] h1') || 
+                                   document.querySelector('.F_66n') || 
+                                   document.querySelector('[role="heading"][aria-level="1"]');
+          if (outlookSubjectEl) {
+            subject = outlookSubjectEl.textContent.trim();
           }
-
-          return {
-            subject: subject,
-            selection: window.getSelection().toString().trim()
-          };
-        }
-      }, (results) => {
-        if (chrome.runtime.lastError) {
-          console.warn('Script injection failed, falling back to tab title:', chrome.runtime.lastError.message);
-          // Simple tab title clean fallback on error
-          if (tab.title) {
-            let title = tab.title;
-            title = title.replace(/^\([0-9]+\)\s*/, '');
-            title = title.replace(/^Inbox\s+\([0-9]+\)\s*-\s*/i, '');
-            title = title.replace(/\s+-\s+[^@\s]+@[^@\s]+\.[^@\s]+.*/, '');
-            title = title.replace(/\s+-\s+Gmail$/i, '');
-            title = title.replace(/\s+-\s+.*Outlook$/i, '');
-            taskTitleInput.value = title.trim();
-            validateForm();
-          }
-          return;
         }
 
-        if (results && results[0] && results[0].result) {
-          const { subject, selection } = results[0].result;
-          if (subject) {
-            taskTitleInput.value = subject;
-          } else if (tab.title) {
-            taskTitleInput.value = tab.title;
-          }
+        // 2. Fallback: Parse and clean document title
+        if (!subject) {
+          let title = document.title || '';
+          // Remove Inbox count e.g., "Inbox (5) - " or "Inbox (12) -"
+          title = title.replace(/^\([0-9]+\)\s*/, '');
+          title = title.replace(/^Inbox\s+\([0-9]+\)\s*-\s*/i, '');
+          
+          // Remove email addresses and everything after them
+          title = title.replace(/\s+-\s+[^@\s]+@[^@\s]+\.[^@\s]+.*/, '');
+          // Remove browser/client suffixes
+          title = title.replace(/\s+-\s+Gmail$/i, '');
+          title = title.replace(/\s+-\s+.*Outlook$/i, '');
+          subject = title.trim();
+        }
+
+        return {
+          subject: subject,
+          selection: window.getSelection().toString().trim()
+        };
+      }
+    }, (results) => {
+      let pageTitle = tab.title || '';
+      let pageUrl = tab.url || '';
+      
+      // Clean page title for fallback
+      pageTitle = pageTitle.replace(/^\([0-9]+\)\s*/, '');
+      pageTitle = pageTitle.replace(/^Inbox\s+\([0-9]+\)\s*-\s*/i, '');
+      pageTitle = pageTitle.replace(/\s+-\s+[^@\s]+@[^@\s]+\.[^@\s]+.*/, '');
+      pageTitle = pageTitle.replace(/\s+-\s+Gmail$/i, '');
+      pageTitle = pageTitle.replace(/\s+-\s+.*Outlook$/i, '');
+
+      if (chrome.runtime.lastError) {
+        console.warn('Script injection failed, falling back to tab title:', chrome.runtime.lastError.message);
+        if (pageTitle) {
+          taskTitleInput.value = pageTitle.trim();
+        }
+        if (!isEmail && pageUrl) {
+          taskDescTextarea.value = `Source: ${pageTitle || pageUrl}\n${pageUrl}`;
+        }
+        validateForm();
+        return;
+      }
+
+      if (results && results[0] && results[0].result) {
+        const { subject, selection } = results[0].result;
+        if (subject) {
+          taskTitleInput.value = subject;
+        } else if (pageTitle) {
+          taskTitleInput.value = pageTitle;
+        }
+
+        if (isEmail) {
           if (selection) {
             taskDescTextarea.value = selection;
           }
-          validateForm();
+        } else {
+          const sourceText = `Source: ${pageTitle || pageUrl}\n${pageUrl}`;
+          taskDescTextarea.value = selection ? `${selection}\n\n${sourceText}` : sourceText;
         }
-      });
-    }
+        validateForm();
+      }
+    });
   } catch (err) {
     console.error('Error scraper injection context:', err);
   }
@@ -861,13 +999,15 @@ function validateForm() {
 }
 
 // Task submission
+// Task submission
 async function handleCreateTask() {
   const listId = todolistSelect.value;
   const title = taskTitleInput.value.trim();
   const description = taskDescTextarea.value.trim();
   const assigneeVal = assigneeSelect.value;
-  const statusVal = statusSelect.value;
   const labelVal = labelSelect.value;
+  const startDateVal = startDateInput.value;
+  const dueDateVal = dueDateInput.value;
 
   if (!listId || !title) return;
 
@@ -882,9 +1022,16 @@ async function handleCreateTask() {
       description: description,
       assigned_to: assignees,
       assigned: assignees,
-      status: statusVal,
+      status: 'To Do',
       label_id: labelVal ? parseInt(labelVal, 10) : null
     };
+
+    if (startDateVal) {
+      payload.start_date = startDateVal;
+    }
+    if (dueDateVal) {
+      payload.due_date = dueDateVal;
+    }
 
     const urls = [
       resolveUrl(`https://${storedDomain}{list_id}/tasks.json`, 'list_id', listId),
@@ -892,7 +1039,7 @@ async function handleCreateTask() {
       `https://${storedDomain}/api/v3/todolists/${cleanId(listId)}/tasks`
     ];
 
-    await fetchWithFallback(urls, {
+    const response = await fetchWithFallback(urls, {
       method: 'POST',
       headers: getHeaders(storedApiKey),
       body: JSON.stringify(payload)
@@ -900,9 +1047,26 @@ async function handleCreateTask() {
 
     showAlert('Task added successfully!', 'success');
     
+    // Save to session history / storage
+    let createdTaskId = null;
+    if (response && response.data) {
+      const resData = response.data;
+      if (resData.id) {
+        createdTaskId = resData.id;
+      } else if (resData.task && resData.task.id) {
+        createdTaskId = resData.task.id;
+      } else if (Array.isArray(resData) && resData[0] && resData[0].id) {
+        createdTaskId = resData[0].id;
+      }
+    }
+    saveRecentTask(title, createdTaskId, listId);
+
     // Clear inputs (retain selects)
     taskTitleInput.value = '';
     taskDescTextarea.value = '';
+    startDateInput.value = '';
+    dueDateInput.value = '';
+    updatePresetActiveState(null);
     validateForm();
 
   } catch (err) {
@@ -930,4 +1094,137 @@ function setLoadingState(buttonEl, isLoading, spinnerId = '') {
     if (spinner) spinner.classList.add('hidden');
     if (span) span.style.opacity = '1';
   }
+}
+
+// Phase 2 Theme UI sync
+function updateThemeUI() {
+  const moonSvg = `<svg class="theme-icon-moon" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
+  const sunSvg = `<svg class="theme-icon-sun" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.22" x2="5.64" y2="17.78"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>`;
+  
+  const currentSvg = isDarkMode ? sunSvg : moonSvg;
+  const titleText = isDarkMode ? 'Switch to Light Theme' : 'Switch to Dark Theme';
+  
+  [themeToggleProject, themeToggleTask, themeToggleProfile].forEach(btn => {
+    if (btn) {
+      btn.innerHTML = currentSvg;
+      btn.title = titleText;
+    }
+  });
+}
+
+// Phase 2 Date pickers formats helper
+function getFormattedDate(offsetDays) {
+  const d = new Date();
+  d.setDate(d.getDate() + offsetDays);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const date = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${date}`;
+}
+
+function getDaysToNextMonday() {
+  const d = new Date();
+  const day = d.getDay(); // 0: Sun, 1: Mon, etc.
+  const days = (1 - day + 7) % 7;
+  return days === 0 ? 7 : days;
+}
+
+function updatePresetActiveState(activeBtn) {
+  [presetToday, presetTomorrow, presetNextMonday].forEach(btn => {
+    if (btn) btn.classList.remove('active');
+  });
+  if (activeBtn) {
+    activeBtn.classList.add('active');
+  }
+}
+
+// Phase 2 Session recent tasks logger helper
+function saveRecentTask(title, taskId, listId) {
+  let taskUrl = '';
+  if (storedDomain && selectedProjectId && listId) {
+    if (taskId) {
+      taskUrl = `https://${storedDomain}/bappswift/#app/tasks/task-${taskId}`;
+    } else {
+      taskUrl = `https://${storedDomain}/bappswift/#app/todos/project-${selectedProjectId}/list-${listId}`;
+    }
+  }
+  
+  const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const newTask = {
+    id: taskId || Date.now(),
+    title: title,
+    url: taskUrl,
+    time: timeStr
+  };
+  
+  recentTasks.unshift(newTask);
+  recentTasks = recentTasks.slice(0, 3); // cap at 3
+  
+  chrome.storage.local.set({ proofhub_recent_tasks: recentTasks }, () => {
+    renderRecentTasks();
+  });
+}
+
+function renderRecentTasks() {
+  if (!recentTasksList || !recentTasksPanel) return;
+  
+  if (recentTasks.length === 0) {
+    recentTasksPanel.classList.add('hidden');
+    recentTasksList.innerHTML = '';
+    return;
+  }
+  
+  recentTasksPanel.classList.remove('hidden');
+  recentTasksList.innerHTML = '';
+  
+  recentTasks.forEach(task => {
+    const row = document.createElement('div');
+    row.className = 'recent-task-item';
+    
+    const info = document.createElement('div');
+    info.className = 'recent-task-info';
+    
+    const titleLink = document.createElement('a');
+    titleLink.className = 'recent-task-title';
+    titleLink.href = task.url || '#';
+    titleLink.textContent = task.title;
+    titleLink.title = 'Open in ProofHub';
+    titleLink.target = '_blank';
+    
+    titleLink.addEventListener('click', (e) => {
+      if (!task.url) {
+        e.preventDefault();
+        return;
+      }
+      chrome.tabs.create({ url: task.url });
+    });
+    
+    const meta = document.createElement('span');
+    meta.className = 'recent-task-meta';
+    meta.textContent = `Added at ${task.time}`;
+    
+    info.appendChild(titleLink);
+    info.appendChild(meta);
+    
+    const linkBtn = document.createElement('button');
+    linkBtn.className = 'recent-task-link-btn';
+    linkBtn.title = 'Open task page';
+    linkBtn.innerHTML = `
+      <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 3 21 3 21 9"></polyline>
+        <line x1="10" y1="14" x2="21" y2="3"></line>
+        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+      </svg>
+    `;
+    
+    linkBtn.addEventListener('click', () => {
+      if (task.url) {
+        chrome.tabs.create({ url: task.url });
+      }
+    });
+    
+    row.appendChild(info);
+    row.appendChild(linkBtn);
+    recentTasksList.appendChild(row);
+  });
 }

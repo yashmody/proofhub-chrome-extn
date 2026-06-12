@@ -75,10 +75,14 @@ body {
   transform: translateY(0);
 }
 
+#setup-view {
+  gap: 16px;
+}
+
 /* Header style for Setup */
 .header {
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 4px;
 }
 
 .logo-area {
@@ -664,5 +668,215 @@ select:disabled {
 .danger-btn:hover:not(:disabled) {
   background-color: #dc2626;
   box-shadow: var(--shadow-md);
+}
+
+/* Theme adjustments & Variables overrides */
+body.dark-theme {
+  --bg-app: #0f172a;       /* Slate 900 */
+  --bg-card: #1e293b;      /* Slate 800 */
+  --border-color: #334155;  /* Slate 700 */
+  --text-main: #f8fafc;     /* Slate 50 */
+  --text-muted: #94a3b8;    /* Slate 400 */
+  --primary-light: #1e1b4b; /* Deep indigo */
+}
+
+/* Ensure smooth theme transitions */
+body {
+  transition: background-color var(--transition-normal), color var(--transition-normal);
+}
+
+.view, .btn, .project-row, input, select, textarea, .recent-tasks-panel {
+  transition: background-color var(--transition-normal), color var(--transition-normal), border-color var(--transition-normal), box-shadow var(--transition-fast);
+}
+
+/* Header actions container */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.theme-toggle-btn {
+  color: var(--text-muted);
+}
+
+.theme-toggle-btn:hover {
+  color: var(--primary-color);
+  background-color: var(--primary-light);
+}
+
+body.dark-theme .theme-toggle-btn svg {
+  color: #fbbf24; /* yellow sun in dark mode */
+}
+
+/* Date input styling */
+.date-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.date-input {
+  flex: 1;
+  padding: 8px 10px;
+}
+
+.date-presets {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.preset-btn {
+  font-family: var(--font-family);
+  font-size: 10px;
+  font-weight: 500;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  padding: 8px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+}
+
+.preset-btn:hover {
+  background-color: var(--primary-light);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.preset-btn.active {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: var(--text-white);
+}
+
+.preset-btn.clear-btn {
+  color: var(--error-color);
+  font-size: 13px;
+  padding: 5px 8px;
+  font-weight: 700;
+}
+
+.preset-btn.clear-btn:hover {
+  background-color: var(--error-bg);
+  border-color: var(--error-color);
+}
+
+/* Recent Tasks Panel Styling */
+.recent-tasks-panel {
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-card);
+}
+
+.recent-tasks-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.recent-tasks-header h3 {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+}
+
+.clear-recent-btn {
+  background: transparent;
+  border: none;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.clear-recent-btn:hover {
+  color: var(--error-color);
+}
+
+.recent-tasks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.recent-task-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-app);
+  border: 1px solid var(--border-color);
+  transition: border-color var(--transition-fast);
+}
+
+.recent-task-item:hover {
+  border-color: var(--primary-color);
+}
+
+.recent-task-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.recent-task-title {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-main);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.recent-task-title:hover {
+  text-decoration: underline;
+  color: var(--primary-color);
+}
+
+.recent-task-meta {
+  font-size: 9px;
+  color: var(--text-muted);
+  display: flex;
+  gap: 6px;
+}
+
+.recent-task-link-btn {
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 50%;
+  transition: color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.recent-task-link-btn:hover {
+  color: var(--primary-color);
+  background-color: var(--primary-light);
+}
+
+/* Date grid container for Start/End dates */
+.date-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 4px;
 }
 
